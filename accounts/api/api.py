@@ -6,7 +6,12 @@ from rest_framework.response import Response
 # knox
 from knox.models import AuthToken
 # serializers
-from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
+from .serializers import (
+    UserSerializer,
+    RegisterSerializer,
+    LoginSerializer,
+    GoogleLoginSerializer,
+)
 # helpers
 from utils.helpers import get_random_name
 
@@ -64,10 +69,27 @@ class RandomNameAPI(APIView):
     def get(self, _):
         random_name = get_random_name()
 
-        # TODO: find a better way to do it, since it might make a lot of queries to the database
+        # FIXME: find a better way to do it, since it might make a lot of queries to the database
         while User.objects.filter(username=random_name).exists():
             random_name = get_random_name()
 
         return Response({
             "name": random_name
+        })
+
+
+class GoogleOAuthAPI(generics.GenericAPIView):
+    permission_classes = [
+        permissions.AllowAny,
+    ]
+
+    serializer_class = GoogleLoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data
+        return Response({
+            "user": UserSerializer(user, context=self.get_serializer_context()).data,
+            "token": AuthToken.objects.create(user)[1]
         })

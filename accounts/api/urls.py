@@ -2,7 +2,13 @@ from django.urls import path, include
 # knox
 from knox import views as knox_views
 
-from .api import RegisterAPI, LoginAPI, UserAPI, RandomNameAPI
+from .api import (
+    RegisterAPI,
+    LoginAPI,
+    UserAPI,
+    RandomNameAPI,
+    GoogleOAuthAPI
+)
 
 urlpatterns = [
     path('', include('knox.urls')),
@@ -12,5 +18,7 @@ urlpatterns = [
     path('logout', knox_views.LogoutView.as_view(), name='knox_logout'),
 
     path('random-name', RandomNameAPI.as_view(), name='random-name'),
+
+    path('google-login', GoogleOAuthAPI.as_view(), name='google-login'),
 
 ]
