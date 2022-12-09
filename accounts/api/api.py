@@ -1,9 +1,17 @@
+from django.contrib.auth import get_user_model
+# rest framework
 from rest_framework import generics, permissions
+from rest_framework.views import APIView
 from rest_framework.response import Response
 # knox
 from knox.models import AuthToken
 # serializers
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
+# helpers
+from utils.helpers import get_random_name
+
+
+User = get_user_model()
 
 
 class RegisterAPI(generics.GenericAPIView):
@@ -48,4 +56,18 @@ class UserAPI(generics.RetrieveUpdateAPIView):
         return Response({
             "user": UserSerializer(user, context=self.get_serializer_context()).data,
             "token": AuthToken.objects.create(user)[1]
+        })
+
+
+class RandomNameAPI(APIView):
+
+    def get(self, _):
+        random_name = get_random_name()
+
+        # TODO: find a better way to do it, since it might make a lot of queries to the database
+        while User.objects.filter(username=random_name).exists():
+            random_name = get_random_name()
+
+        return Response({
+            "name": random_name
         })
