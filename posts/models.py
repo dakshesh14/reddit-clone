@@ -75,6 +75,7 @@ class Community(models.Model):
     def save(self, *args, **kwargs):
         if not self.id:
             self.slug = slugify(self.name)
+        self.name = self.name.lower()
         super(Community, self).save(*args, **kwargs)
 
 
