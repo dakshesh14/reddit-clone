@@ -80,7 +80,6 @@ class PostSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'slug', 'created_at', 'updated_at',)
         extra_kwargs = {
             'owner': {'required': False},
-            'community': {'required': True},
         }
 
     def create(self, validated_data):

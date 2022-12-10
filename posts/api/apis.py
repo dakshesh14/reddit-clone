@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 # rest framework
 from rest_framework.views import APIView
 from rest_framework import generics
@@ -76,8 +77,26 @@ class PostListCreateAPIView(generics.ListCreateAPIView):
 
     permission_classes = [IsAuthenticatedOrReadOnly, ]
 
+    def get_queryset(self):
+        community_slug = self.kwargs.get('slug')
+        if community_slug:
+            return Post.objects.filter(community__slug=community_slug).all()
+        else:
+            my_posts = self.request.query_params.get('my-posts')
+            my_feed = self.request.query_params.get('my-feed')
+
+            if my_posts:
+                return Post.objects.filter(owner=self.request.user).all()
+            elif my_feed:
+                return Post.objects.filter(community__joinedcommunity__user=self.request.user).all()
+            else:
+                return Post.objects.all()
+
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        community_slug = self.kwargs.get('slug')
+        community = get_object_or_404(Community, slug=community_slug)
+
+        serializer.save(owner=self.request.user, community=community)
 
 
 class PostRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
