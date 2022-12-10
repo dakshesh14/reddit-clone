@@ -6,4 +6,5 @@ class IsOwnerOrReadonly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
+        # FIXME: This is throw error when checking permission for Community
         return obj.owner == request.user or obj.community.owner == request.user or request.user.is_superuser
