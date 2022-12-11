@@ -11,13 +11,13 @@ from .apis import (
 urlpatterns = [
     # communities
     path(
-        'communities/',
+        'community/',
         CommunityListCreateAPIView.as_view(),
         name='community-list-create'
 
     ),
     path(
-        'communities/<slug:slug>/',
+        'community/<slug:slug>/',
         CommunityRetrieveUpdateDestroyAPIView.as_view(),
         name='community-retrieve-update-destroy'
     ),
