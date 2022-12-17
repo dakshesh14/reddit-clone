@@ -46,12 +46,23 @@ class CommunitySerializer(serializers.ModelSerializer):
 
 
 class JoinedCommunitySerializer(serializers.ModelSerializer):
-    community_details = serializers.SerializerMethodField()
+    community_details = CommunitySerializer(
+        source='community', read_only=True,
+    )
+    communities = serializers.SlugRelatedField(
+        queryset=Community.objects.all(),
+        many=True,
+        write_only=True,
+        slug_field='slug',
+    )
 
     class Meta:
         model = JoinedCommunity
-        fields = ('id', 'community', 'community_details',)
+        fields = ('id', 'community_details', 'communities',)
         read_only_fields = ('id',)
+        extra_kwargs = {
+            'community': {'required': False},
+        }
 
     def get_community_details(self, obj):
         serializer_context = {'request': self.context.get('request')}

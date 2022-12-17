@@ -42,33 +42,36 @@ class JoinedCommunityListCreateAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request, _=None):
-        serializer = JoinedCommunitySerializer(data=request.data)
-        if serializer.is_valid():
-            community = Community.objects.get(
-                slug=serializer.validated_data['community'].slug
-            )
-            if JoinedCommunity.objects.filter(user=request.user, community=community).exists():
-                return Response({'detail': 'You have already joined this community.'}, status=400)
+        communities = request.data.get('communities')
+        if communities:
+            for community in communities:
+                community = get_object_or_404(Community, slug=community)
+                if JoinedCommunity.objects.filter(user=request.user, community=community).exists():
+                    continue
+                # TODO: switch to bulk_create
+                JoinedCommunity.objects.create(
+                    user=request.user, community=community
+                )
 
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=201)
-
-        return Response(serializer.errors, status=400)
+            return Response(status=201)
+        else:
+            return Response({'detail': 'No communities found.'}, status=400)
 
     def delete(self, request, _=None):
-        serializer = JoinedCommunitySerializer(data=request.data)
-        if serializer.is_valid():
-            community = Community.objects.get(
-                slug=serializer.validated_data['community'].slug
-            )
-            if not JoinedCommunity.objects.filter(user=request.user, community=community).exists():
-                return Response({'detail': 'You have not joined this community.'}, status=400)
+        communities = request.data.get('communities')
+        if communities:
+            for community in communities:
+                community = get_object_or_404(Community, slug=community)
+                if not JoinedCommunity.objects.filter(user=request.user, community=community).exists():
+                    continue
 
-            JoinedCommunity.objects.filter(
-                user=request.user, community=community).delete()
+                JoinedCommunity.objects.filter(
+                    user=request.user, community=community
+                ).delete()
+
             return Response(status=204)
-
-        return Response(serializer.errors, status=400)
+        else:
+            return Response({'detail': 'No communities found.'}, status=400)
 
 
 class PostListCreateAPIView(generics.ListCreateAPIView):
