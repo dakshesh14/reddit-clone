@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from posts.models import Post, Community, PostImage, JoinedCommunity
 
+from accounts.api.serializers import UserSerializer
+
 
 class PostImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -79,6 +81,7 @@ class PostSerializer(serializers.ModelSerializer):
     thumbnail = PostImageSerializer(source='get_thumbnail', read_only=True)
 
     community_details = serializers.SerializerMethodField()
+    owner_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -90,6 +93,7 @@ class PostSerializer(serializers.ModelSerializer):
             'community',
             'community_details',
             'owner',
+            'owner_details',
             'images',
             'thumbnail',
             'created_at',
@@ -104,6 +108,13 @@ class PostSerializer(serializers.ModelSerializer):
         serializer_context = {'request': self.context.get('request')}
         serializer = CommunitySerializer(
             obj.community, context=serializer_context
+        )
+        return serializer.data
+
+    def get_owner_details(self, obj):
+        serializer_context = {'request': self.context.get('request')}
+        serializer = UserSerializer(
+            obj.owner, context=serializer_context
         )
         return serializer.data
 
