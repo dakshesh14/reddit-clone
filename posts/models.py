@@ -86,7 +86,8 @@ class PostImage(models.Model):
         format='JPEG',
         options={'quality': 100},
     )
-    post = models.ForeignKey('Post', on_delete=models.CASCADE)
+    post = models.ForeignKey(
+        'Post', on_delete=models.CASCADE, related_name='images')
 
     def __str__(self):
         return f'{self.post} image'
@@ -121,6 +122,12 @@ class Post(models.Model):
 
     def __unicode__(self):
         return self.title
+
+    def get_thumbnail(self):
+        return self.images.first()
+
+    def get_images(self):
+        return self.images.all()
 
     def get_absolute_url(self):
         return "/communities/%s/%s/" % (self.community.slug, self.slug)

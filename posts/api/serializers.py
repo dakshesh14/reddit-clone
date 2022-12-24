@@ -73,7 +73,10 @@ class JoinedCommunitySerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    images = PostImageSerializer(many=True, read_only=True)
+    images = PostImageSerializer(
+        many=True, read_only=True, source='get_images'
+    )
+    thumbnail = PostImageSerializer(source='get_thumbnail', read_only=True)
 
     class Meta:
         model = Post
@@ -85,6 +88,7 @@ class PostSerializer(serializers.ModelSerializer):
             'community',
             'owner',
             'images',
+            'thumbnail',
             'created_at',
             'updated_at',
         )
@@ -92,6 +96,13 @@ class PostSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'owner': {'required': False},
         }
+
+    def validate(self, data):
+        if len(self.context['request'].FILES.getlist('images')) <= 0:
+            raise serializers.ValidationError(
+                {'images': 'You must upload at least one image'}
+            )
+        return data
 
     def create(self, validated_data):
         images_data = self.context['request'].FILES
