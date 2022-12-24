@@ -34,7 +34,7 @@ class CommunitySerializer(serializers.ModelSerializer):
 
     def get_is_member(self, obj):
         request = self.context.get('request')
-        if request:
+        if request and request.user.is_authenticated:
             return JoinedCommunity.objects.filter(
                 community=obj,
                 user=request.user,
@@ -78,6 +78,8 @@ class PostSerializer(serializers.ModelSerializer):
     )
     thumbnail = PostImageSerializer(source='get_thumbnail', read_only=True)
 
+    community_details = serializers.SerializerMethodField()
+
     class Meta:
         model = Post
         fields = (
@@ -86,6 +88,7 @@ class PostSerializer(serializers.ModelSerializer):
             'content',
             'slug',
             'community',
+            'community_details',
             'owner',
             'images',
             'thumbnail',
@@ -96,6 +99,13 @@ class PostSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'owner': {'required': False},
         }
+
+    def get_community_details(self, obj):
+        serializer_context = {'request': self.context.get('request')}
+        serializer = CommunitySerializer(
+            obj.community, context=serializer_context
+        )
+        return serializer.data
 
     def validate(self, data):
         if len(self.context['request'].FILES.getlist('images')) <= 0:
