@@ -77,11 +77,50 @@ class Post(models.Model):
         super(Post, self).save(*args, **kwargs)
 
 
+class Comment(models.Model):
+    post = models.ForeignKey(
+        'Post', on_delete=models.CASCADE, related_name='comments'
+    )
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        related_name='replies',
+        null=True,
+        blank=True,
+    )
+
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        related_name='comments',
+        null=True,
+    )
+
+    content = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def get_replies(self):
+        return self.replies.all()
+
+    def get_votes(self):
+        return self.votes.filter(upvoted=True).count() - self.votes.filter(downvoted=True).count()
+
+    class Meta:
+        ordering = ('-created_at',)
+        verbose_name = 'comment'
+        verbose_name_plural = 'comments'
+
+    def __str__(self) -> str:
+        return self.content
+
+
 class VotingBaseModel(models.Model):
     owner = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='post_votes',
+        related_name='%(class)s_owner',
     )
 
     upvoted = models.BooleanField(default=False)
@@ -89,7 +128,6 @@ class VotingBaseModel(models.Model):
 
     class Meta:
         abstract = True
-        unique_together = ('owner', 'post')
 
     def __str__(self):
         return f'{self.owner} voted {self.post}'
@@ -105,5 +143,20 @@ class PostVote(VotingBaseModel):
         'Post', on_delete=models.CASCADE, related_name='votes'
     )
 
+    class Meta:
+        unique_together = ('owner', 'post')
+
     def __str__(self):
         return f'{self.owner} voted {self.post}'
+
+
+class CommentVote(VotingBaseModel):
+    comment = models.ForeignKey(
+        'Comment', on_delete=models.CASCADE, related_name='votes'
+    )
+
+    class Meta:
+        unique_together = ('owner', 'comment')
+
+    def __str__(self):
+        return f'{self.owner} voted {self.comment}'
