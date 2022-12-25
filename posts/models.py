@@ -110,6 +110,14 @@ class Comment(models.Model):
     def get_reply_count(self):
         return self.replies.count()
 
+    def get_comment_depth(self):
+        if self.parent is None:
+            return 0
+        return self.parent.get_comment_depth() + 1
+
+    def get_can_reply(self):
+        return self.get_comment_depth() < 5
+
     def get_replies(self):
         return self.replies.all()
 
@@ -123,6 +131,12 @@ class Comment(models.Model):
 
     def __str__(self) -> str:
         return self.content
+
+    def save(self, *args, **kwargs):
+        if self.get_can_reply():
+            super(Comment, self).save(*args, **kwargs)
+        else:
+            raise ValueError('Maximum comment depth reached.')
 
 
 class VotingBaseModel(models.Model):

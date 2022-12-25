@@ -115,6 +115,10 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only=True, source='get_reply_count'
     )
 
+    can_reply = serializers.BooleanField(
+        read_only=True, source='get_can_reply'
+    )
+
     class Meta:
         model = Comment
         fields = (
@@ -123,6 +127,7 @@ class CommentSerializer(serializers.ModelSerializer):
             'post',
             'parent',
             'votes',
+            'can_reply',
             'upvoted',
             'downvoted',
             'replies',
@@ -167,6 +172,17 @@ class CommentSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def validate(self, data):
+        # check for comment depth
+        if self.context['request'].data.get('parent'):
+            parent = Comment.objects.get(
+                id=self.context['request'].data.get('parent')
+            )
+            if parent.get_comment_depth() >= 3:
+                raise serializers.ValidationError(
+                    {'parent': 'Comment depth exceeded.'}
+                )
+
         if self.context['request'].user.is_authenticated:
             data['owner'] = self.context['request'].user
+
         return data
