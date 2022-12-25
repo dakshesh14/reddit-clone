@@ -56,6 +56,12 @@ class Post(models.Model):
     def __unicode__(self):
         return self.title
 
+    def get_comment_count(self):
+        return self.comments.count()
+
+    def get_comments(self):
+        return self.comments.filter(parent=None)
+
     def get_votes(self):
         return self.votes.filter(upvoted=True).count() - self.votes.filter(downvoted=True).count()
 
@@ -100,6 +106,9 @@ class Comment(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def get_reply_count(self):
+        return self.replies.count()
 
     def get_replies(self):
         return self.replies.all()

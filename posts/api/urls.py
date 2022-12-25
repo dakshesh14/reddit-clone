@@ -4,6 +4,9 @@ from .apis import (
     PostListCreateAPIView,
     PostRetrieveUpdateDestroyAPIView,
     PostVoteAPIView,
+    PostCommentListCreateAPIView,
+    PostCommentRetrieveUpdateDestroyAPIView,
+    PostCommentVoteAPIView,
 )
 
 urlpatterns = [
@@ -43,4 +46,22 @@ urlpatterns = [
         name='post-vote'
     ),
 
+    # for post comments
+    path(
+        'posts/<slug:slug>/comments/',
+        PostCommentListCreateAPIView.as_view(),
+        name='post-comment-list-create'
+    ),
+    path(
+        'posts/<slug:slug>/comments/<int:pk>/',
+        PostCommentRetrieveUpdateDestroyAPIView.as_view(),
+        name='post-comment-retrieve-update-destroy'
+    ),
+
+    # for post comment votes
+    path(
+        'posts/<slug:slug>/comments/<int:pk>/vote/',
+        PostCommentVoteAPIView.as_view(),
+        name='post-comment-vote'
+    ),
 ]

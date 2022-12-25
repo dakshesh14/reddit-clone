@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from posts.models import Post, PostImage
+from posts.models import Post, PostImage, Comment
 
 from accounts.api.serializers import UserSerializer
 
@@ -29,6 +29,10 @@ class PostSerializer(serializers.ModelSerializer):
     upvoted = serializers.SerializerMethodField()
     downvoted = serializers.SerializerMethodField()
 
+    comment_count = serializers.IntegerField(
+        read_only=True, source='get_comment_count'
+    )
+
     class Meta:
         model = Post
         fields = (
@@ -39,6 +43,7 @@ class PostSerializer(serializers.ModelSerializer):
             'votes',
             'upvoted',
             'downvoted',
+            'comment_count',
             'community',
             'community_details',
             'owner',
@@ -94,3 +99,74 @@ class PostSerializer(serializers.ModelSerializer):
         for image_data in images_data.getlist('images'):
             PostImage.objects.create(post=post, image=image_data)
         return post
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    owner_details = serializers.SerializerMethodField()
+    votes = serializers.IntegerField(
+        read_only=True, source='get_votes'
+    )
+
+    upvoted = serializers.SerializerMethodField()
+    downvoted = serializers.SerializerMethodField()
+
+    replies = serializers.SerializerMethodField()
+    reply_count = serializers.IntegerField(
+        read_only=True, source='get_reply_count'
+    )
+
+    class Meta:
+        model = Comment
+        fields = (
+            'id',
+            'content',
+            'post',
+            'parent',
+            'votes',
+            'upvoted',
+            'downvoted',
+            'replies',
+            'reply_count',
+            'owner',
+            'owner_details',
+            'created_at',
+            'updated_at',
+        )
+        read_only_fields = ('id', 'created_at', 'updated_at',)
+        extra_kwargs = {
+            'owner': {'required': False},
+            'post': {'required': False},
+        }
+
+    def get_replies(self, obj):
+        serializer_context = {'request': self.context.get('request')}
+        serializer = CommentSerializer(
+            obj.replies.all(), context=serializer_context, many=True
+        )
+        return serializer.data
+
+    def get_upvoted(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            if obj.votes.filter(owner=user, upvoted=True).exists():
+                return True
+        return False
+
+    def get_downvoted(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            if obj.votes.filter(owner=user, downvoted=True).exists():
+                return True
+        return False
+
+    def get_owner_details(self, obj):
+        serializer_context = {'request': self.context.get('request')}
+        serializer = UserSerializer(
+            obj.owner, context=serializer_context
+        )
+        return serializer.data
+
+    def validate(self, data):
+        if self.context['request'].user.is_authenticated:
+            data['owner'] = self.context['request'].user
+        return data
