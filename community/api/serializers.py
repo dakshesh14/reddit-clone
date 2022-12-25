@@ -15,6 +15,7 @@ class CommunitySerializer(serializers.ModelSerializer):
             'slug',
             'owner',
             'description',
+            'logo',
             'created_at',
             'updated_at',
             'is_member',

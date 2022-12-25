@@ -2,6 +2,10 @@ from django.db import models
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 
+# imagekit
+from imagekit.models import ProcessedImageField
+from imagekit.processors import ResizeToFill
+
 
 User = get_user_model()
 
@@ -38,6 +42,14 @@ class Community(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(max_length=325, unique=True)
 
+    logo = ProcessedImageField(
+        upload_to='community_logos',
+        processors=[ResizeToFill(400, 400)],
+        format='JPEG',
+        options={'quality': 100},
+        null=True,
+        blank=True,
+    )
     description = models.TextField(blank=True)
 
     owner = models.ForeignKey(
