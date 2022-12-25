@@ -22,6 +22,10 @@ class PostSerializer(serializers.ModelSerializer):
     community_details = serializers.SerializerMethodField()
     owner_details = serializers.SerializerMethodField()
 
+    votes = serializers.IntegerField(
+        read_only=True, source='get_votes'
+    )
+
     class Meta:
         model = Post
         fields = (
@@ -29,6 +33,7 @@ class PostSerializer(serializers.ModelSerializer):
             'title',
             'content',
             'slug',
+            'votes',
             'community',
             'community_details',
             'owner',

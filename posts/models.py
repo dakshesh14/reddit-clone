@@ -56,6 +56,9 @@ class Post(models.Model):
     def __unicode__(self):
         return self.title
 
+    def get_votes(self):
+        return self.votes.filter(upvoted=True).count() - self.votes.filter(downvoted=True).count()
+
     def get_thumbnail(self):
         return self.images.first()
 
@@ -72,3 +75,35 @@ class Post(models.Model):
         if not self.id:
             self.slug = slugify(self.title) + '-' + get_uuid()
         super(Post, self).save(*args, **kwargs)
+
+
+class VotingBaseModel(models.Model):
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='post_votes',
+    )
+
+    upvoted = models.BooleanField(default=False)
+    downvoted = models.BooleanField(default=False)
+
+    class Meta:
+        abstract = True
+        unique_together = ('owner', 'post')
+
+    def __str__(self):
+        return f'{self.owner} voted {self.post}'
+
+    def save(self, *args, **kwargs):
+        if self.upvoted and self.downvoted:
+            raise ValueError('Cannot upvote and downvote at the same time')
+        super(VotingBaseModel, self).save(*args, **kwargs)
+
+
+class PostVote(VotingBaseModel):
+    post = models.ForeignKey(
+        'Post', on_delete=models.CASCADE, related_name='votes'
+    )
+
+    def __str__(self):
+        return f'{self.owner} voted {self.post}'
