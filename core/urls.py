@@ -13,4 +13,7 @@ urlpatterns = [
     # posts
     path('', include("posts.urls"), name='posts'),
 
+    # communities
+    path('', include("community.urls"), name='communities'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
