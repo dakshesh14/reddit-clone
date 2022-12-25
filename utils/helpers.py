@@ -42,3 +42,7 @@ def validate_google_token(token, client_id):
 
 def get_random_identicon(seed: str):
     return f"https://avatars.dicebear.com/api/identicon/${seed}.png"
+
+
+def get_random_avatar(seed: str):
+    return f"https://avatars.dicebear.com/api/bottts/${seed}.png"

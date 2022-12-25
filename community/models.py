@@ -31,7 +31,7 @@ def SET_OLDEST_MEMBER(collector, field, sub_objs, using):
     oldest_members = JoinedCommunity.objects.filter(
         community=sub_objs[0]
     ).order_by('date_joined')
-    if oldest_members.exists():
+    if oldest_members.exists() and oldest_members.first().user != sub_objs[0].owner:
         collector.add_field_update(
             field,
             oldest_members.first().user,
@@ -84,7 +84,6 @@ class Community(models.Model):
 
     def save(self, *args, **kwargs):
         import requests
-        from django.core.files.base import ContentFile
         from django.core.files.temp import NamedTemporaryFile
 
         if not self.id:

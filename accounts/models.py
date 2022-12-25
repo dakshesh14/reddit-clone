@@ -1,12 +1,31 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
+# imagekit
+from imagekit.models import ImageSpecField
+from imagekit.processors import ResizeToFill
+
+# utils
+from utils.helpers import get_random_avatar
+
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('Users must have an email address')
-        user = self.model(email=self.normalize_email(email), **extra_fields)
+
+        if not extra_fields.get('avatar', None):
+            image_url = get_random_avatar(extra_fields.get('username', email))
+
+            import requests
+            from django.core.files.base import ContentFile
+            response = requests.get(image_url)
+            extra_fields['avatar'] = ContentFile(
+                response.content, name=f'{extra_fields.get("username",email)}.jpg'
+            )
+
+        user = self.model(email=self.normalize_email(
+            email), **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -27,6 +46,16 @@ class User(AbstractUser):
     )
     is_admin = models.BooleanField(default=False)
     is_onboarded = models.BooleanField(default=False)
+
+    avatar = models.ImageField(
+        upload_to='avatars',
+    )
+    processed_avatar = ImageSpecField(
+        source='avatar',
+        processors=[ResizeToFill(400, 400)],
+        format='JPEG',
+        options={'quality': 60},
+    )
 
     objects = UserManager()
 
