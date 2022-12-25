@@ -25,6 +25,7 @@ class CommunitySerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'members': {'required': False},
             'owner': {'required': False},
+            'logo': {'required': False},
         }
 
     def get_is_member(self, obj):

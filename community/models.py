@@ -1,11 +1,14 @@
 from django.db import models
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
+from django.core.files import File as DjangoFile
 
 # imagekit
-from imagekit.models import ProcessedImageField
+from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
 
+# utils
+from utils.helpers import get_random_identicon
 
 User = get_user_model()
 
@@ -42,13 +45,14 @@ class Community(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(max_length=325, unique=True)
 
-    logo = ProcessedImageField(
+    logo = models.ImageField(
         upload_to='community_logos',
+    )
+    processed_logo = ImageSpecField(
+        source='logo',
         processors=[ResizeToFill(400, 400)],
         format='JPEG',
-        options={'quality': 100},
-        null=True,
-        blank=True,
+        options={'quality': 60},
     )
     description = models.TextField(blank=True)
 
@@ -79,7 +83,23 @@ class Community(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        import requests
+        from django.core.files.base import ContentFile
+        from django.core.files.temp import NamedTemporaryFile
+
         if not self.id:
             self.slug = slugify(self.name)
+
+            if not self.logo:
+                response = requests.get(get_random_identicon(self.name))
+                img_temp = NamedTemporaryFile()
+                img_temp.write(response.content)
+                img_temp.flush()
+                self.logo.save(
+                    f'{self.slug}.jpg',
+                    DjangoFile(img_temp),
+                    save=False
+                )
+
         self.name = self.name.lower()
         super(Community, self).save(*args, **kwargs)
