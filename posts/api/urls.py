@@ -3,6 +3,7 @@ from django.urls import path
 from .apis import (
     PostListCreateAPIView,
     PostRetrieveUpdateDestroyAPIView,
+    PostVoteAPIView,
 )
 
 urlpatterns = [
@@ -34,4 +35,12 @@ urlpatterns = [
         PostRetrieveUpdateDestroyAPIView.as_view(),
         name='post-retrieve-update-destroy'
     ),
+
+    # for post votes
+    path(
+        'posts/<slug:slug>/vote/',
+        PostVoteAPIView.as_view(),
+        name='post-vote'
+    ),
+
 ]

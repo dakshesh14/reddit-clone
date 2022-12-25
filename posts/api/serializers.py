@@ -26,6 +26,9 @@ class PostSerializer(serializers.ModelSerializer):
         read_only=True, source='get_votes'
     )
 
+    upvoted = serializers.SerializerMethodField()
+    downvoted = serializers.SerializerMethodField()
+
     class Meta:
         model = Post
         fields = (
@@ -34,6 +37,8 @@ class PostSerializer(serializers.ModelSerializer):
             'content',
             'slug',
             'votes',
+            'upvoted',
+            'downvoted',
             'community',
             'community_details',
             'owner',
@@ -47,6 +52,20 @@ class PostSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'owner': {'required': False},
         }
+
+    def get_upvoted(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            if obj.votes.filter(owner=user, upvoted=True).exists():
+                return True
+        return False
+
+    def get_downvoted(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            if obj.votes.filter(owner=user, downvoted=True).exists():
+                return True
+        return False
 
     def get_community_details(self, obj):
         serializer_context = {'request': self.context.get('request')}

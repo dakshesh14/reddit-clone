@@ -1,12 +1,12 @@
 from django.shortcuts import get_object_or_404
 # rest framework
 from rest_framework import generics
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-
 # serializers
 from .serializers import PostSerializer
 # models
-from posts.models import Post
+from posts.models import Post, PostVote
 from community.models import Community
 # utils
 from utils.permissions import (IsOwnerOrReadonly,)
@@ -47,3 +47,37 @@ class PostRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'slug'
 
     permission_classes = [IsOwnerOrReadonly, ]
+
+
+class PostVoteAPIView(generics.GenericAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+
+    lookup_field = 'slug'
+
+    permission_classes = [IsAuthenticatedOrReadOnly, ]
+
+    def post(self, request, *args, **kwargs):
+        post = self.get_object()
+
+        upvoted = request.data.get('upvote', True)
+        downvoted = request.data.get('downvote', False)
+
+        if upvoted == downvoted:
+            return Response({'error': 'You can only upvote or downvote.'}, status=400)
+
+        vote, created = PostVote.objects.get_or_create(
+            owner=request.user,
+            post=post,
+            upvoted=upvoted,
+            downvoted=downvoted,
+        )
+
+        if not created:
+            vote.delete()
+        else:
+            vote.upvoted = upvoted
+            vote.downvoted = downvoted
+            vote.save()
+
+        return Response(self.get_serializer(post).data)
