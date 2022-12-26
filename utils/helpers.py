@@ -10,8 +10,8 @@ from google.auth.transport import requests as google_requests
 from .constants import prefixes, suffixes, pre_prefixes
 
 
-def get_uuid():
-    return str(uuid.uuid4())[:8]
+def get_uuid(query_length: int = 8):
+    return str(uuid.uuid4())[:query_length]
 
 
 def get_random_name() -> str:
