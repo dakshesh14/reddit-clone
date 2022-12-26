@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'community.apps.CommunityConfig',
     'posts.apps.PostsConfig',
+    'chat.apps.ChatConfig',
 
 ]
 
