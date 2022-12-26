@@ -33,7 +33,7 @@ class CommunityChatRoomMember(models.Model):
         'chat.CommunityChatRoom', on_delete=models.CASCADE, related_name='members'
     )
 
-    user = models.ForeignKey(
+    owner = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='chat_room_memberships'
     )
 
@@ -55,7 +55,7 @@ class CommunityChatRoomMessage(models.Model):
         'chat.CommunityChatRoom', on_delete=models.CASCADE, related_name='messages'
     )
 
-    user = models.ForeignKey(
+    owner = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='chat_room_messages'
     )
 
