@@ -16,4 +16,7 @@ urlpatterns = [
     # communities
     path('', include("community.urls"), name='communities'),
 
+    # chat
+    path('', include("chat.urls"), name='chat'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
