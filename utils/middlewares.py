@@ -1,42 +1,33 @@
-from urllib.parse import parse_qs
-
-# django
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
-from django.db import close_old_connections
-# channels
-from channels.auth import AuthMiddleware, AuthMiddlewareStack, UserLazyObject
+from rest_framework_simplejwt.tokens import AccessToken
 from channels.db import database_sync_to_async
-from channels.sessions import CookieMiddleware, SessionMiddleware
-
-# knox
-from knox.settings import CONSTANTS, knox_settings
-from knox.models import AuthToken, User as KnoxUser
-
-User = get_user_model()
+from channels.middleware import BaseMiddleware
 
 
 @database_sync_to_async
-def get_user(scope):
-    close_old_connections()
-    query_string = parse_qs(scope['query_string'].decode())
-    token = query_string.get('token')
-    if not token:
-        return AnonymousUser()
+def get_user(token_key):
     try:
-        token = AuthToken.objects.get(token_key=token[0])
+        token = AccessToken(token_key)
         user = token.user
-    except Exception as exception:
+        return user
+    except Exception as e:
         return AnonymousUser()
-    if not user.is_active:
-        return AnonymousUser()
-    return user
 
 
-class TokenAuthMiddleware(AuthMiddleware):
-    async def resolve_scope(self, scope):
-        scope['user']._wrapped = await get_user(scope)
+class TokenAuthMiddleware(BaseMiddleware):
+    def __init__(self, inner):
+        super().__init__(inner)
 
+    async def __call__(self, scope, receive, send):
+        try:
+            token = None
+            for header in scope['headers']:
+                if header[0] == b'authorization':
+                    token = header[1].decode()
+                    break
 
-def TokenAuthMiddlewareStack(inner):
-    return CookieMiddleware(SessionMiddleware(TokenAuthMiddleware(inner)))
+        except ValueError:
+            token_key = None
+
+        scope['user'] = AnonymousUser() if token is None else await get_user(token)
+        return await super().__call__(scope, receive, send)
