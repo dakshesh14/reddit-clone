@@ -7,6 +7,9 @@ def delete_migrations():
     if sure != 'y':
         return
     for root, dirs, files in os.walk('.'):
+        # ignore .env and .git
+        if '.env' in root or '.git' in root:
+            continue
         if 'migrations' in dirs:
             migrations_path = os.path.join(root, 'migrations')
             for file in os.listdir(migrations_path):

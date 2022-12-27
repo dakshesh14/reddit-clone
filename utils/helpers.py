@@ -46,3 +46,14 @@ def get_random_identicon(seed: str):
 
 def get_random_avatar(seed: str):
     return f"https://avatars.dicebear.com/api/bottts/${seed}.png"
+
+
+def get_auth_token(user):
+
+    from rest_framework_simplejwt.tokens import RefreshToken
+
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
