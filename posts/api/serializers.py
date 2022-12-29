@@ -13,21 +13,26 @@ class PostImageSerializer(serializers.ModelSerializer):
         fields = ('id', 'image', 'post',)
 
 
-class PostSerializer(serializers.ModelSerializer):
-    images = PostImageSerializer(
-        many=True, read_only=True, source='get_images'
-    )
-    thumbnail = PostImageSerializer(source='get_thumbnail', read_only=True)
-
-    community_details = serializers.SerializerMethodField()
-    owner_details = serializers.SerializerMethodField()
+# make base reusable serializer
+class PostBaseSerializer(serializers.ModelSerializer):
+    """
+    Base serializer for post that can be used for post ranking
+    """
 
     votes = serializers.IntegerField(
         read_only=True, source='get_votes'
     )
 
-    upvoted = serializers.SerializerMethodField()
-    downvoted = serializers.SerializerMethodField()
+    upvote_count = serializers.IntegerField(
+        read_only=True, source='get_upvote_count'
+    )
+    downvote_count = serializers.IntegerField(
+        read_only=True, source='get_downvote_count'
+    )
+    share_count = serializers.IntegerField(
+        read_only=True, source='get_share_count'
+    )
+    score = serializers.IntegerField(read_only=True)
 
     comment_count = serializers.IntegerField(
         read_only=True, source='get_comment_count'
@@ -41,22 +46,50 @@ class PostSerializer(serializers.ModelSerializer):
             'content',
             'slug',
             'votes',
-            'upvoted',
-            'downvoted',
             'comment_count',
+            'upvote_count',
+            'downvote_count',
+            'share_count',
+            'score',
             'community',
-            'community_details',
             'owner',
-            'owner_details',
-            'images',
-            'thumbnail',
             'created_at',
             'updated_at',
         )
-        read_only_fields = ('id', 'slug', 'created_at', 'updated_at',)
+        read_only_fields = (
+            'id', 'slug', 'created_at', 'updated_at',
+            'comment_count', 'upvote_count', 'downvote_count',
+            'share_count', 'score',
+        )
         extra_kwargs = {
             'owner': {'required': False},
         }
+
+
+class PostSerializer(PostBaseSerializer):
+    images = PostImageSerializer(
+        many=True, read_only=True, source='get_images'
+    )
+    thumbnail = PostImageSerializer(source='get_thumbnail', read_only=True)
+
+    community_details = serializers.SerializerMethodField()
+    owner_details = serializers.SerializerMethodField()
+
+    upvoted = serializers.SerializerMethodField()
+    downvoted = serializers.SerializerMethodField()
+
+    class Meta(PostBaseSerializer.Meta):
+        model = Post
+        fields = PostBaseSerializer.Meta.fields + (
+            'images',
+            'thumbnail',
+            'community_details',
+            'owner_details',
+            'upvoted',
+            'downvoted',
+        )
+        read_only_fields = PostBaseSerializer.Meta.read_only_fields
+        extra_kwargs = PostBaseSerializer.Meta.extra_kwargs
 
     def get_upvoted(self, obj):
         user = self.context['request'].user

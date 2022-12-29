@@ -59,6 +59,15 @@ class Post(models.Model):
     def get_comment_count(self):
         return self.comments.count()
 
+    def get_downvote_count(self):
+        return self.votes.filter(downvoted=True).count()
+
+    def get_upvote_count(self):
+        return self.votes.filter(upvoted=True).count()
+
+    def get_share_count(self):
+        return self.shares.count()
+
     def get_comments(self):
         return self.comments.filter(parent=None)
 
