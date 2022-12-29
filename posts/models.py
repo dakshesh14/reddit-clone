@@ -183,3 +183,25 @@ class CommentVote(VotingBaseModel):
 
     def __str__(self):
         return f'{self.owner} voted {self.comment}'
+
+
+class PostShare(models.Model):
+    post = models.ForeignKey(
+        'Post', on_delete=models.CASCADE, related_name='shares'
+    )
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='post_shares',
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('owner', 'post')
+
+    def __str__(self):
+        return f'{self.owner} shared {self.post}'
+
+    def save(self, *args, **kwargs):
+        super(PostShare, self).save(*args, **kwargs)

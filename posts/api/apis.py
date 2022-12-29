@@ -4,9 +4,9 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 # serializers
-from .serializers import PostSerializer, CommentSerializer
+from .serializers import PostSerializer, CommentSerializer, PostShareSerializer
 # models
-from posts.models import Post, PostVote, Comment, CommentVote
+from posts.models import Post, PostVote, Comment, CommentVote, PostShare
 from community.models import Community
 # utils
 from utils.permissions import (IsOwnerOrReadonly,)
@@ -142,3 +142,23 @@ class PostCommentVoteAPIView(generics.GenericAPIView):
             vote.save()
 
         return Response(self.get_serializer(comment).data)
+
+
+class PostShareAPIView(generics.GenericAPIView):
+    queryset = PostShare.objects.all()
+    serializer_class = PostShareSerializer
+
+    permission_classes = [IsAuthenticatedOrReadOnly, ]
+
+    def post(self, request, *args, **kwargs):
+        post_slug = self.kwargs.get('slug')
+        post = get_object_or_404(Post, slug=post_slug)
+
+        if PostShare.objects.filter(owner=self.request.user, post=post).exists():
+            return Response({'error': 'You have already shared this post.'}, status=400)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(owner=self.request.user, post=post)
+
+        return Response(serializer.data)

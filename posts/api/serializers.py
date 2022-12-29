@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from posts.models import Post, PostImage, Comment
+from posts.models import Post, PostImage, Comment, PostShare
 
 from accounts.api.serializers import UserSerializer
 
@@ -186,3 +186,14 @@ class CommentSerializer(serializers.ModelSerializer):
             data['owner'] = self.context['request'].user
 
         return data
+
+
+class PostShareSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PostShare
+        fields = ('id', 'post', 'owner', 'created_at',)
+        read_only_fields = ('id', 'created_at', 'owner', 'post')
+        extra_kwargs = {
+            'owner': {'required': False},
+        }

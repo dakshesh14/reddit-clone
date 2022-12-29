@@ -7,6 +7,7 @@ from .apis import (
     PostCommentListCreateAPIView,
     PostCommentRetrieveUpdateDestroyAPIView,
     PostCommentVoteAPIView,
+    PostShareAPIView,
 )
 
 urlpatterns = [
@@ -64,4 +65,12 @@ urlpatterns = [
         PostCommentVoteAPIView.as_view(),
         name='post-comment-vote'
     ),
+
+    # for post shares
+    path(
+        'posts/<slug:slug>/share/',
+        PostShareAPIView.as_view(),
+        name='post-share'
+    )
+
 ]
