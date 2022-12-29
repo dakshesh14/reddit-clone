@@ -2,6 +2,10 @@ import os
 
 
 def delete_migrations():
+    # NOTE: This script will delete all migrations files in the project.
+    # Migrations files are used to keep track of database changes.
+    # If you want to delete all migrations files, run this script.
+    # If you want to delete a specific migrations file, delete it manually.
     sure = input(
         'Are you sure you want to delete all migrations files? (y/n) ')
     if sure != 'y':
