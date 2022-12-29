@@ -24,8 +24,41 @@ class PostListCreateAPIView(generics.ListCreateAPIView):
         if community_slug:
             return rank_posts(Post.objects.filter(community__slug=community_slug).all())
         else:
-            my_posts = self.request.query_params.get('my-posts')
-            my_feed = self.request.query_params.get('my-feed')
+
+            url = self.request.build_absolute_uri()
+
+            my_posts = 'my-posts' in url
+            my_feed = 'my-feed' in url
+
+            filter_by = self.request.query_params.get('filter_by', None)
+
+            start_date = None
+            end_date = None
+
+            if filter_by == "hot":
+
+                from datetime import timedelta, timezone
+
+                start_date = timezone.now() - timedelta(days=1)
+                end_date = timezone.now()
+
+            elif filter_by == "week":
+                from datetime import timedelta, timezone
+
+                start_date = timezone.now() - timedelta(days=7)
+                end_date = timezone.now()
+
+            elif filter_by == "month":
+                from datetime import timedelta, timezone
+
+                start_date = timezone.now() - timedelta(days=30)
+                end_date = timezone.now()
+
+            elif filter_by == "year":
+                from datetime import timedelta, timezone
+
+                start_date = timezone.now() - timedelta(days=365)
+                end_date = timezone.now()
 
             posts = Post.objects.none()
 
@@ -37,7 +70,7 @@ class PostListCreateAPIView(generics.ListCreateAPIView):
             else:
                 posts = Post.objects.all()
 
-            return rank_posts(posts)
+            return rank_posts(posts, start_date=start_date, end_date=end_date)
 
     def perform_create(self, serializer):
         community_slug = self.kwargs.get('slug')
