@@ -3,12 +3,16 @@ from rest_framework_simplejwt.tokens import AccessToken
 from channels.db import database_sync_to_async
 from channels.middleware import BaseMiddleware
 
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 
 @database_sync_to_async
 def get_user(token_key):
     try:
         token = AccessToken(token_key)
-        user = token.user
+        user = User.objects.get(id=token['user_id'])
         return user
     except Exception as e:
         return AnonymousUser()

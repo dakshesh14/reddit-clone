@@ -20,25 +20,24 @@ def is_authenticated(scope):
     return scope['user'].is_authenticated
 
 
-# https://github.com/abdurraufraihan/django-chat/blob/main/server/apps/chat/consumers.py
-
-
 class ChatConsumer(AsyncWebsocketConsumer):
 
-    # save message to database
     @database_sync_to_async
     def save_message(self, data):
         room = Room.objects.get(slug=data['room'])
         serializer = MessageSerializer(data={
-            'room': room.id,
-            'user': self.scope['user'].id,
+            'chat_room': room.id,
+            'owner': self.scope['user'].id,
             'message': data['message']
         })
 
         if serializer.is_valid():
             serializer.save()
+        else:
+            print(serializer.errors)
 
-    # get room message
+        return serializer.data
+
     @database_sync_to_async
     def get_room_messages(self, room_slug):
         room = Room.objects.get(slug=room_slug)
@@ -46,7 +45,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         serializer = MessageSerializer(messages, many=True)
         return serializer.data
 
-    # mark user as online
     @database_sync_to_async
     def mark_user_online(self, room_slug):
         room = Room.objects.get(slug=room_slug)
@@ -54,7 +52,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         member.is_online = True
         member.save()
 
-    # mark user as offline
     @database_sync_to_async
     def mark_user_offline(self, room_slug):
         room = Room.objects.get(slug=room_slug)
@@ -62,7 +59,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         member.is_online = False
         member.save()
 
-    # mark user as typing
     @database_sync_to_async
     def mark_user_typing(self, room_slug):
         room = Room.objects.get(slug=room_slug)
@@ -70,7 +66,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         member.is_typing = True
         member.save()
 
-    # mark user as not typing
     @database_sync_to_async
     def mark_user_not_typing(self, room_slug):
         room = Room.objects.get(slug=room_slug)
@@ -78,7 +73,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         member.is_typing = False
         member.save()
 
-    # get room details
     @database_sync_to_async
     def get_room_details(self, room_slug):
         room = Room.objects.get(slug=room_slug)
@@ -86,6 +80,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return room, members
 
     async def connect(self):
+        if not is_authenticated(self.scope):
+            await self.close()
+            return
 
         self.room_slug = self.scope['url_route']['kwargs']['room_slug']
 
@@ -106,10 +103,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.mark_user_online(self.room_slug)
 
     async def disconnect(self, close_code):
-
         chat_room = f'chat_{self.room_slug}'
 
-        # Leave room group
         await self.channel_layer.group_discard(
             chat_room,
             self.channel_name
@@ -117,29 +112,41 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         await self.mark_user_offline(self.room_slug)
 
-    # Receive message from WebSocket
+    async def chat_message(self, event):
+
+        if event['user'] == self.scope['user']:
+            return
+
+        await self.send(text_data=json.dumps({
+            'type': 'user_typing',
+            'user': event['user']
+        }))
 
     async def receive(self, text_data):
+        await self.mark_user_not_typing(self.room_slug)
+
         text_data_json = json.loads(text_data)
+
         message = text_data_json['message']
 
         # get room orm object
-        room = self.get_room_details(self.room_slug)
+        room, members = await self.get_room_details(self.room_slug)
 
-        serializer = MessageSerializer(data={
-            'room': room.id,
-            'user': self.scope['user'].id,
+        response = await self.save_message({
+            'room': room.slug,
             'message': message
         })
 
-        if serializer.is_valid():
-            serializer.save()
+        self.send(text_data=json.dumps({
+            'message': response['message'],
+            'room': room.slug,
+        }))
 
-            # Send message to room group
+        # Send message to room group
         await self.channel_layer.group_send(
-            self.room_group_name,
+            self.channel_name,
             {
                 'type': 'chat_message',
-                'message': serializer.data
+                'message': response['message']
             }
         )
