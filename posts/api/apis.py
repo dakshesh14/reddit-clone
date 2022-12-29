@@ -10,6 +10,7 @@ from posts.models import Post, PostVote, Comment, CommentVote, PostShare
 from community.models import Community
 # utils
 from utils.permissions import (IsOwnerOrReadonly,)
+from utils.post_rank_helpers import rank_posts
 
 
 class PostListCreateAPIView(generics.ListCreateAPIView):
@@ -21,17 +22,22 @@ class PostListCreateAPIView(generics.ListCreateAPIView):
     def get_queryset(self):
         community_slug = self.kwargs.get('slug')
         if community_slug:
-            return Post.objects.filter(community__slug=community_slug).all()
+            return rank_posts(Post.objects.filter(community__slug=community_slug).all())
         else:
             my_posts = self.request.query_params.get('my-posts')
             my_feed = self.request.query_params.get('my-feed')
 
+            posts = Post.objects.none()
+
             if my_posts:
-                return Post.objects.filter(owner=self.request.user).all()
+                posts = Post.objects.filter(owner=self.request.user).all()
             elif my_feed:
-                return Post.objects.filter(community__joinedcommunity__user=self.request.user).all()
+                posts = Post.objects.filter(
+                    community__joinedcommunity__user=self.request.user).all()
             else:
-                return Post.objects.all()
+                posts = Post.objects.all()
+
+            return rank_posts(posts)
 
     def perform_create(self, serializer):
         community_slug = self.kwargs.get('slug')

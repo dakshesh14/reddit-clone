@@ -1,6 +1,4 @@
 import re
-# local
-from posts.api.serializers import PostBaseSerializer
 
 
 CREDIBILITY_WORDS = [
@@ -35,7 +33,7 @@ def calculate_readability(text):
 def calculate_quality(post):
     quality = 0
 
-    length = len(post['content'])
+    length = len(post.content)
 
     if length > 500:
         quality += 5
@@ -43,10 +41,10 @@ def calculate_quality(post):
         quality += 3
 
     for word in CREDIBILITY_WORDS:
-        if word in post['content']:
+        if word in post.content:
             quality += 2
 
-    readability = calculate_readability(post['content'])
+    readability = calculate_readability(post.content)
 
     if readability > 60:
         quality += 5
@@ -56,42 +54,46 @@ def calculate_quality(post):
     return quality
 
 
-def rank_posts(posts, start_date, end_date):
+def rank_posts(posts, start_date=None, end_date=None):
     """
     Ranks the posts according to freshness, relevance and quality. For freshness, we use the
     time since the post was created. For relevance, we use the number of votes, share and comments.
     For quality, we use the length of the post, the number of credibility and the readability.
     """
 
-    filtered_posts = posts.filter(created_at__range=[start_date, end_date])
+    # if start and end is provided then filter the posts
+    if start_date and end_date:
+        filtered_posts = posts.filter(created_at__range=[start_date, end_date])
+    else:
+        filtered_posts = posts
 
     # sorting the post by freshness
     sorted_posts = filtered_posts.order_by('-created_at')
 
     # convert to json serializable data
-    sorted_posts = PostBaseSerializer(sorted_posts, many=True).data
+    # sorted_posts = PostBaseSerializer(sorted_posts, many=True).data
+
+    ranked_posts = []
 
     # assigning base score to each post based on the freshness
-    for i in range(len(sorted_posts)):
-        sorted_posts[i].score = len(sorted_posts) - i
-
-    # adjusting the score based on engagements
-    for post in sorted_posts:
-
-        # calculating the engagement score
-        score = post['upvote_count'] * 2
-        score += post['downvote_count'] * -1.5
-        score += post['comment_count'] * 1.5
-        score += post['share_count'] * 0.5
+    for i, post in enumerate(sorted_posts):
+        score = len(sorted_posts) - i
 
         score += calculate_quality(post)
 
-        # adjusting the score based on the engagement score
-        post.score = post.score + score
+        score += post.get_upvote_count() * 2
+        score -= post.get_downvote_count() * 1.5
+        score += post.get_comment_count() * 1.5
+        score += post.get_share_count() * 0.5
+
+        ranked_posts.append({
+            'post': post,
+            'score': score,
+        })
 
     # sorting the posts based on the score
-    sorted_posts = sorted(
-        sorted_posts, key=lambda post: post.score, reverse=True
+    ranked_posts = sorted(
+        ranked_posts, key=lambda post: post['score'], reverse=True
     )
 
-    return sorted_posts
+    return [post['post'] for post in ranked_posts]
