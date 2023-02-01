@@ -194,10 +194,10 @@ class PostShareAPIView(generics.GenericAPIView):
         post = get_object_or_404(Post, slug=post_slug)
 
         if PostShare.objects.filter(owner=self.request.user, post=post).exists():
-            return Response({'error': 'You have already shared this post.'}, status=400)
+            return Response(status=200)
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(owner=self.request.user, post=post)
 
-        return Response(serializer.data)
+        return Response(status=200)
