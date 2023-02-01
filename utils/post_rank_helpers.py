@@ -70,12 +70,9 @@ def rank_posts(posts, start_date=None, end_date=None):
     # sorting the post by freshness
     sorted_posts = filtered_posts.order_by('-created_at')
 
-    # convert to json serializable data
-    # sorted_posts = PostBaseSerializer(sorted_posts, many=True).data
-
     ranked_posts = []
 
-    # assigning base score to each post based on the freshness
+    # assigning base score to each post based on the relevance & quality
     for i, post in enumerate(sorted_posts):
         score = len(sorted_posts) - i
 
