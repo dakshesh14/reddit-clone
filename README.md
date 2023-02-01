@@ -17,6 +17,7 @@ Technology used:
 - Create communities/posts/comments
 - Upvote/downvote posts/comments
 - Get random username & profile pictures
+- Post ranking algorithm
 
 ## Installation
 
@@ -58,7 +59,7 @@ Coming soon...
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-## Aknowledgements
+## Acknowledgements
 
 - [Django](https://www.djangoproject.com/)
 - [Django Rest Framework](https://www.django-rest-framework.org/)

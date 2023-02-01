@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import Post, PostImage, PostVote, PostShare
+from .models import (
+    Post,
+    PostImage,
+    PostVote,
+    PostShare,
+    Comment,
+    CommentVote,
+)
 
 
 @admin.register(Post)
@@ -23,4 +30,14 @@ class PostVoteAdmin(admin.ModelAdmin):
 
 @admin.register(PostShare)
 class PostShareAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(CommentVote)
+class CommentVoteAdmin(admin.ModelAdmin):
     pass
